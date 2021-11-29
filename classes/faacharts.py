@@ -77,7 +77,7 @@ def DownloadFile(link, path):
         del res
 
         # Update the log with the size and speed
-        log[0] = log[0] + "Done."
+        log[0] = log[0] + "done."
         b = f"{utils.humanbytes(dl)}"
         b = " " * (10 - len(b)) + b
         s = f"{int(speed)}KB/s"
@@ -149,7 +149,7 @@ def Download(newcharts, oldcharts, path, req, res):
             else:
                 print(r.decode("utf8"))
 
-    print("    Downloads to process: " + str(len(downloadlinks)))
+    print(f"Downloading {len(downloadlinks)} charts:")
 
     zippath = os.path.join(path, "zips")
     work = [(l, zippath) for l in downloadlinks]

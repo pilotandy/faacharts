@@ -125,10 +125,6 @@ def Download(newcharts, oldcharts, path, req, res):
             # Use it and download it if we have the shape file
             head, charttype = os.path.split(path)
             shape_post = ""
-            if (
-                charttype == "vfr"
-            ):  # Maybe we can remove the "SEC" from VFR shape files in the future
-                shape_post = "SEC"
             shape_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
             shape_path = os.path.join(
                 shape_path, "shapes", charttype, n["name"] + shape_post + ".shp"

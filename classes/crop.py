@@ -8,7 +8,7 @@ def CropChart(chart, path, shppath):
 
     warpname = os.path.join(wippath, chart["name"] + ".warp.tif")
     cropname = os.path.join(wippath, chart["name"] + ".crop.tif")
-    shpfile = os.path.join(shppath, chart["name"] + "SEC.shp")
+    shpfile = os.path.join(shppath, chart["name"] + ".shp")
 
     log = ["Cropping " + chart["name"] + ".warp.tif" + "..."]
     cmd = [

@@ -43,21 +43,15 @@ class Process(multiprocessing.Process):
         path = os.path.join(self.workroot, self.charttype)
         charts = Download(new, current, path, self.webreq, self.webres)
 
-        # Dont commit me!
-        charts = []
-        for c in current:
-            if c["use"]:
-                charts.append(c)
-        print(f"Forcing {len(charts)} charts")
-
         chart_count = len(charts)
-        # charts = UnzipCharts(charts, path)
-        # charts = ConvertToRGB(charts, path, self.charttype)
-        # charts = WarpCharts(charts, path)
-        # charts = CropCharts(charts, path, self.charttype)
+        charts = UnzipCharts(charts, path)
+        charts = ConvertToRGB(charts, path, self.charttype)
+        charts = WarpCharts(charts, path)
+        charts = CropCharts(charts, path, self.charttype)
 
-        # charts = MoveToReady(charts, path)
-        # if len(charts) == chart_count:
-        if BuildList(path) and BuildVRT(path):
-            GenerateTiles(path)
-            #     Publish(path)
+        charts = MoveToReady(charts, path)
+        if len(charts) == chart_count:
+            if BuildList(path) and BuildVRT(path):
+                if GenerateTiles(path):
+                    version = charts[0]["version"]
+                    Publish(path, version, self.charttype, self.webreq, self.webres)

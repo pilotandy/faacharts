@@ -1,5 +1,6 @@
 import os
 import glob
+import json
 import shutil
 import subprocess
 
@@ -110,5 +111,57 @@ def GenerateTiles(path):
         return False
 
 
-def Publish(path):
-    pass
+def Publish(path, version, charttype, req, res):
+
+    host = os.environ.get("SSH_HOST")
+    remotepath = os.path.join(os.environ.get("SSH_PATH"), charttype)
+
+    cmd = [
+        "cd",
+        path,
+        "&&",
+        "mv",
+        "temp",
+        str(version),
+        "&&",
+        "tar",
+        "-czf",
+        "-",
+        str(version),
+        "|",
+        "ssh",
+        host,
+        f'"tar -xzf - -C {remotepath}"',
+    ]
+
+    p = subprocess.run(
+        " ".join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
+    )
+    if p.returncode != 0:
+        print(" ".join(cmd))
+        msg = p.stdout.decode("utf8")
+        print(msg)
+        return False
+
+    req.put(["GET", f"/api/flight/cycle/"])
+    status, r = res.get(timeout=10)
+    if status != 200:
+        print(r.decode("utf8"))
+        return False
+    cycle = None
+    for c in json.loads(r):
+        if c["charttype"] == charttype:
+            cycle = c
+
+    if cycle:
+        cycle["version"] = version
+        req.put(["PUT", f"/api/flight/cycle/{cycle['id']}/", cycle])
+    else:
+        cycle = {"charttype": charttype, "version": version}
+        req.put(["POST", f"/api/flight/cycle/", cycle])
+    status, r = res.get(timeout=10)
+    if status > 201:
+        print(r.decode("utf8"))
+        return False
+
+    return True

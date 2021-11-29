@@ -30,31 +30,18 @@ class WebInterface(multiprocessing.Process):
         return (self.req, self.res)
 
     def request(self, parts):
-        headers = {"Authorization": "Bearer " + self.auth.tokens.get("access")}
-        data = None
-        if len(parts) > 2:
-            data = parts[2]
+        try:
+            headers = {"Authorization": "Bearer " + self.auth.access()}
+            data = None
+            if len(parts) > 2:
+                data = parts[2]
 
-        r = self.methods[parts[0]](self.host + parts[1], headers=headers, data=data)
-
-        # if it doesnt work, then what?
-        # self.auth.refresh()
-        # self.auth.login()
-
-        return (r.status_code, r.content)
+            r = self.methods[parts[0]](self.host + parts[1], headers=headers, data=data)
+            return (r.status_code, r.content)
+        except Exception as exc:
+            return (500, b"WebInterface: " + str(exc).encode("utf8"))
 
     def run(self):
-
-        # Authenticate
-        print("WebInterface: Authenticating")
-        try:
-            self.auth.login()
-        except Exception as exc:
-            print("WebInterface: Auth failed.\n" + str(exc))
-            return
-
-        # Authenticated, let's go!
-        self.res.put("ready")
         print("WebInterface: Running")
         while not self.exit.is_set():
             try:

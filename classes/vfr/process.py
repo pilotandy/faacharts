@@ -20,20 +20,24 @@ class ProcessVFR(multiprocessing.Process):
         self.workroot = os.environ.get("WORK_ROOT")
 
     def run(self):
+
         # Get the new charts from the FAA website
         new = GetVFR()
 
-        # Get the current charts from PilotAndy website
+        # Get the current charts from our website
         self.webreq.put(["GET", '/api/flight/chart/?search="vfr"'])
         status, r = self.webres.get(timeout=10)
         if status != 200:
             print("Failed to get the VFR chart list:", r.decode("utf8"))
+            return
         current = json.loads(r)
 
         # Download any changed charts
         path = os.path.join(self.workroot, "vfr")
         wip = Download(new, current, path, self.webreq, self.webres)
-        Unzip(path, wip)
+
+        print(wip)
+        # Unzip(path, wip)
 
         # Process WIP charts
 

@@ -10,6 +10,8 @@ from bs4 import BeautifulSoup
 
 from .utils import utils
 
+import random
+
 
 def GetVFR():
     print("Getting published file list VFR...")
@@ -58,10 +60,10 @@ def DownloadFile(link, path):
         fullzip = os.path.join(path, link["name"] + ".zip")
 
         # Save from web to partial
-        res = requests.get(link["link"], stream=True)
-        speed = 0
-        start = time.time()
         dl = 0
+        speed = 0
+        res = requests.get(link["link"], stream=True)
+        start = time.time()
         with open(partial, "wb") as f:
             for chunk in res.iter_content(chunk_size=1024):
                 if chunk:
@@ -70,7 +72,13 @@ def DownloadFile(link, path):
                     speed = (dl / (end - start)) / len(chunk)
                     f.write(chunk)
         del res
-        log[0] = log[0] + f"Done.  {utils.humanbytes(dl)} @ {int(speed)}KB/s"
+
+        # Update the log with the size and speed
+        log[0] = log[0] + "Done."
+        b = f"{utils.humanbytes(dl)}"
+        b = " " * (10 - len(b)) + b
+        s = f"{int(speed)}KB/s"
+        log[0] = log[0] + " " * (50 - len(log[0])) + b + " @ " + s
 
         # Move to zip file
         shutil.move(partial, fullzip)
@@ -112,8 +120,17 @@ def Download(newcharts, oldcharts, path, req, res):
             print("Adding to charts <" + n["charttype"] + ">: " + n["name"])
 
             # Use it and download it if we have the shape file
-            shp_path = os.path.join(path, "shapes", n["name"] + "SEC.shp")
-            if os.path.exists(shp_path):
+            head, tail = os.path.split(path)
+            shape_post = ""
+            if (
+                tail == "vfr"
+            ):  # Maybe we can remove the "SEC" from VFR shape files in the future
+                shape_post = "SEC"
+            shape_path = os.path.abspath(os.path.dirname(__file__))
+            shape_path = os.path.join(
+                shape_path, tail, "shapes", n["name"] + shape_post + ".shp"
+            )
+            if os.path.exists(shape_path):
                 n["use"] = True
 
             # POST it to the website

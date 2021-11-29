@@ -1,12 +1,15 @@
 import os
-import re
 import json
-import queue
-import requests
-import traceback
 import multiprocessing
 
+from classes.warp import WarpCharts
+
 from .faacharts import GetCharts, Download
+from .unzip import UnzipCharts
+from .convertrgb import ConvertToRGB
+from .warp import WarpCharts
+from .crop import CropCharts
+from .publish import BuildVRT, MoveToReady, BuildList, GenerateTiles, Publish
 
 
 class Process(multiprocessing.Process):
@@ -38,23 +41,23 @@ class Process(multiprocessing.Process):
 
         # Download any changed charts
         path = os.path.join(self.workroot, self.charttype)
-        wip = Download(new, current, path, self.webreq, self.webres)
+        charts = Download(new, current, path, self.webreq, self.webres)
 
         # Dont commit me!
-        wip = []
+        charts = []
         for c in current:
             if c["use"]:
-                wip.append(c)
+                charts.append(c)
+        print(f"Forcing {len(charts)} charts")
 
-        # Unzip(path, wip)
+        chart_count = len(charts)
+        # charts = UnzipCharts(charts, path)
+        # charts = ConvertToRGB(charts, path, self.charttype)
+        # charts = WarpCharts(charts, path)
+        # charts = CropCharts(charts, path, self.charttype)
 
-        # Process WIP charts
-
-        # Unzip(maptype["type"])
-        # ConvertToRGB(maptype["type"])
-        # WarpTo3857(maptype["type"])
-        # Crop(maptype["type"])
-        # if MoveToReady(maptype["type"]):
-        #     BuildList(maptype["type"])
-        #     GenerateTiles(maptype["type"])
-        #     Publish(maptype["type"])
+        # charts = MoveToReady(charts, path)
+        # if len(charts) == chart_count:
+        if BuildList(path) and BuildVRT(path):
+            GenerateTiles(path)
+            #     Publish(path)

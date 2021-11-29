@@ -1,5 +1,5 @@
 import queue
-from classes.vfr.process import ProcessVFR
+from classes.process import Process
 from classes.web.interface import WebInterface
 
 
@@ -11,7 +11,7 @@ def main():
     web.start()
 
     # Process the VFR charts
-    vfr = ProcessVFR(req, res)
+    vfr = Process("vfr", req, res)
     vfr.start()
     vfr.join()
 

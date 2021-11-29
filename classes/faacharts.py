@@ -8,9 +8,7 @@ import traceback
 import multiprocessing
 from bs4 import BeautifulSoup
 
-from .utils import utils
-
-import random
+from . import utils
 
 
 def GetVFR():
@@ -46,6 +44,11 @@ def GetVFR():
         charts.append(chart)
 
     return charts
+
+
+def GetCharts(charttype):
+    if charttype == "vfr":
+        return GetVFR()
 
 
 def DownloadFile(link, path):
@@ -120,16 +123,17 @@ def Download(newcharts, oldcharts, path, req, res):
             print("Adding to charts <" + n["charttype"] + ">: " + n["name"])
 
             # Use it and download it if we have the shape file
-            head, tail = os.path.split(path)
+            head, charttype = os.path.split(path)
             shape_post = ""
             if (
-                tail == "vfr"
+                charttype == "vfr"
             ):  # Maybe we can remove the "SEC" from VFR shape files in the future
                 shape_post = "SEC"
-            shape_path = os.path.abspath(os.path.dirname(__file__))
+            shape_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
             shape_path = os.path.join(
-                shape_path, tail, "shapes", n["name"] + shape_post + ".shp"
+                shape_path, "shapes", charttype, n["name"] + shape_post + ".shp"
             )
+
             if os.path.exists(shape_path):
                 n["use"] = True
 
@@ -146,6 +150,7 @@ def Download(newcharts, oldcharts, path, req, res):
                 print(r.decode("utf8"))
 
     print("    Downloads to process: " + str(len(downloadlinks)))
+
     zippath = os.path.join(path, "zips")
     work = [(l, zippath) for l in downloadlinks]
     p = multiprocessing.Pool(4, DownloadFileInit, [req, res])

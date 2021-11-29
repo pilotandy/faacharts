@@ -6,11 +6,11 @@ import requests
 import traceback
 import multiprocessing
 
-from ..faacharts import GetVFR, Download
+from .faacharts import GetCharts, Download
 
 
-class ProcessVFR(multiprocessing.Process):
-    def __init__(self, webreq, webres):
+class Process(multiprocessing.Process):
+    def __init__(self, charttype, webreq, webres):
         multiprocessing.Process.__init__(self)
 
         # Queues to communicate with the website process
@@ -18,22 +18,35 @@ class ProcessVFR(multiprocessing.Process):
         self.webres = webres
 
         self.workroot = os.environ.get("WORK_ROOT")
+        self.charttype = charttype.lower()
 
     def run(self):
-        # Get the new charts from the FAA website
-        new = GetVFR()
 
-        # Get the current charts from PilotAndy website
-        self.webreq.put(["GET", '/api/flight/chart/?search="vfr"'])
+        # Get the new charts from the FAA website
+        new = GetCharts(self.charttype)
+
+        # Get the current charts from our website
+        self.webreq.put(["GET", f'/api/flight/chart/?search="{self.charttype}"'])
         status, r = self.webres.get(timeout=10)
         if status != 200:
-            print("Failed to get the VFR chart list:", r.decode("utf8"))
+            print(
+                f"Failed to get the {self.charttype.upper()} chart list:",
+                r.decode("utf8"),
+            )
+            return
         current = json.loads(r)
 
         # Download any changed charts
-        path = os.path.join(self.workroot, "vfr")
+        path = os.path.join(self.workroot, self.charttype)
         wip = Download(new, current, path, self.webreq, self.webres)
-        Unzip(path, wip)
+
+        # Dont commit me!
+        wip = []
+        for c in current:
+            if c["use"]:
+                wip.append(c)
+
+        # Unzip(path, wip)
 
         # Process WIP charts
 

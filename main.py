@@ -1,5 +1,5 @@
 import queue
-from classes.vfr.process import ProcessVFR
+from classes.process import Process
 from classes.web.interface import WebInterface
 
 
@@ -10,17 +10,10 @@ def main():
     req, res = web.getQueues()
     web.start()
 
-    # Make sure the web interface is ready
-    try:
-        res.get(timeout=5)
-
-        # Process the VFR charts
-        vfr = ProcessVFR(req, res)
-        vfr.start()
-        vfr.join()
-
-    except queue.Empty:
-        print("Main: WebInterface isn't ready. Bye!")
+    # Process the VFR charts
+    vfr = Process("vfr", req, res)
+    vfr.start()
+    vfr.join()
 
     # Close things up.
     web.stop()

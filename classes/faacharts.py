@@ -8,7 +8,7 @@ import traceback
 import multiprocessing
 from bs4 import BeautifulSoup
 
-from .utils import utils
+from . import utils
 
 
 def GetVFR():
@@ -46,6 +46,11 @@ def GetVFR():
     return charts
 
 
+def GetCharts(charttype):
+    if charttype == "vfr":
+        return GetVFR()
+
+
 def DownloadFile(link, path):
     log = ["Downloading " + link["name"] + ".zip..."]
 
@@ -58,10 +63,10 @@ def DownloadFile(link, path):
         fullzip = os.path.join(path, link["name"] + ".zip")
 
         # Save from web to partial
-        res = requests.get(link["link"], stream=True)
-        speed = 0
-        start = time.time()
         dl = 0
+        speed = 0
+        res = requests.get(link["link"], stream=True)
+        start = time.time()
         with open(partial, "wb") as f:
             for chunk in res.iter_content(chunk_size=1024):
                 if chunk:
@@ -70,7 +75,13 @@ def DownloadFile(link, path):
                     speed = (dl / (end - start)) / len(chunk)
                     f.write(chunk)
         del res
-        log[0] = log[0] + f"Done.  {utils.humanbytes(dl)} @ {int(speed)}KB/s"
+
+        # Update the log with the size and speed
+        log[0] = log[0] + "Done."
+        b = f"{utils.humanbytes(dl)}"
+        b = " " * (10 - len(b)) + b
+        s = f"{int(speed)}KB/s"
+        log[0] = log[0] + " " * (50 - len(log[0])) + b + " @ " + s
 
         # Move to zip file
         shutil.move(partial, fullzip)
@@ -112,8 +123,18 @@ def Download(newcharts, oldcharts, path, req, res):
             print("Adding to charts <" + n["charttype"] + ">: " + n["name"])
 
             # Use it and download it if we have the shape file
-            shp_path = os.path.join(path, "shapes", n["name"] + "SEC.shp")
-            if os.path.exists(shp_path):
+            head, charttype = os.path.split(path)
+            shape_post = ""
+            if (
+                charttype == "vfr"
+            ):  # Maybe we can remove the "SEC" from VFR shape files in the future
+                shape_post = "SEC"
+            shape_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            shape_path = os.path.join(
+                shape_path, "shapes", charttype, n["name"] + shape_post + ".shp"
+            )
+
+            if os.path.exists(shape_path):
                 n["use"] = True
 
             # POST it to the website
@@ -129,6 +150,7 @@ def Download(newcharts, oldcharts, path, req, res):
                 print(r.decode("utf8"))
 
     print("    Downloads to process: " + str(len(downloadlinks)))
+
     zippath = os.path.join(path, "zips")
     work = [(l, zippath) for l in downloadlinks]
     p = multiprocessing.Pool(4, DownloadFileInit, [req, res])

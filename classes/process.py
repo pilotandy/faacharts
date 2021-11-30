@@ -50,7 +50,7 @@ class Process(multiprocessing.Process):
         charts = CropCharts(charts, path, self.charttype)
 
         charts = MoveToReady(charts, path)
-        if len(charts) == chart_count:
+        if len(charts) == chart_count and chart_count > 0:
             if BuildList(path) and BuildVRT(path):
                 if GenerateTiles(path):
                     version = charts[0]["version"]

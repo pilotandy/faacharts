@@ -109,6 +109,8 @@ def GenerateTiles(path):
         msg = p.stdout.decode("utf8")
         print(msg)
         return False
+    
+    return True
 
 
 def Publish(path, version, charttype, req, res):

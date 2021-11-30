@@ -112,7 +112,7 @@ def GenerateTiles(path):
 
 
 def Publish(path, version, charttype, req, res):
-
+    print("Publishing Tiles...")
     host = os.environ.get("SSH_HOST")
     remotepath = os.path.join(os.environ.get("SSH_PATH"), charttype)
 

@@ -3,6 +3,7 @@ import glob
 import json
 import shutil
 import subprocess
+from datetime import datetime, timezone
 
 
 def MoveToReady(charts, path):
@@ -110,28 +111,37 @@ def GenerateTiles(path):
         print(msg)
         return False
 
+    return True
+
 
 def Publish(path, version, charttype, req, res):
     print("Publishing Tiles...")
     host = os.environ.get("SSH_HOST")
     remotepath = os.path.join(os.environ.get("SSH_PATH"), charttype)
 
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+
     cmd = [
         "cd",
         path,
         "&&",
-        "mv",
-        "temp",
-        str(version),
-        "&&",
         "tar",
         "-czf",
         "-",
-        str(version),
+        f"--transform='s/temp/{timestamp}/'",
+        "temp",
         "|",
         "ssh",
         host,
         f'"tar -xzf - -C {remotepath}"',
+        "&&",
+        "ssh",
+        host,
+        f'"rm -f {os.path.join(remotepath, str(version))} && ln -s {os.path.join(remotepath,timestamp)} {os.path.join(remotepath, str(version))}"',
+        "&&",
+        "rm",
+        "-rf",
+        "temp",
     ]
 
     p = subprocess.run(

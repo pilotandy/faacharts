@@ -3,7 +3,7 @@ FAA VFR and IFR chart download, transform, tile and publish to website.
 
 
 Prereqs:
-sudo apt install git gdal-bin libgdal-dev python-dev python-venv
+sudo apt install git build-essential gdal-bin libgdal-dev python-dev python-venv
 
 
 Define environment variables:
